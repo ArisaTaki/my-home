@@ -1,1 +1,6 @@
-npm test
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 可以在这里添加代码检查等命令
+# 比如运行 lint 检查
+# npm run lint
