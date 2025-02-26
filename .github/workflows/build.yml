@@ -122,11 +122,21 @@ jobs:
             sudo chown -R ${{ secrets.SERVER_USERNAME }}:www-data ${{ secrets.SERVER_PATH }}
             sudo chmod -R 755 ${{ secrets.SERVER_PATH }}
 
-            # 尝试识别服务器环境并重载Nginx
-            echo "正在识别服务器环境..."
+            # 重载Nginx配置
+            echo "尝试重载Nginx配置..."
 
+            # 优先使用/etc/init.d/nginx命令（已确认可用）
+            if [ -f "/etc/init.d/nginx" ]; then
+              echo "使用/etc/init.d/nginx重载配置..."
+              sudo /etc/init.d/nginx reload
+              if [ $? -eq 0 ]; then
+                echo "Nginx配置重载成功！"
+              else
+                echo "Nginx重载失败，尝试使用restart..."
+                sudo /etc/init.d/nginx restart
+              fi
             # 检查常见的Web面板
-            if [ -f "/etc/init.d/bt" ] || [ -d "/www/server/panel" ]; then
+            elif [ -f "/etc/init.d/bt" ] || [ -d "/www/server/panel" ]; then
               echo "检测到宝塔面板环境，尝试使用宝塔命令重载Nginx..."
               if [ -f "/www/server/nginx/sbin/nginx" ]; then
                 sudo /www/server/nginx/sbin/nginx -s reload
@@ -183,4 +193,4 @@ jobs:
               fi
             fi
 
-            echo "网站文件部署完成！如果Nginx配置未能自动重载，请手动执行重载操作。"
+            echo "网站文件部署完成！"
