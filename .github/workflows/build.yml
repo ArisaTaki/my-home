@@ -30,7 +30,7 @@ jobs:
           "VITE_SITE_NAME = `"八六的站点`"" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_AUTHOR = `"八六`"" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_KEYWORDS = `"八六,个人主页`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SITE_DES = `"前端工程师的个人小窝`"" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_SITE_DES = `"一个前端工程师的门户网站`"" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_URL = `"HaR`"" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_LOGO = `"/images/icon/favicon.ico`"" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_MAIN_LOGO = `"/images/icon/logo.png`"" | Out-File -FilePath .env -Append -Encoding utf8
@@ -38,9 +38,9 @@ jobs:
 
           "# 简介文本" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_DESC_HELLO = `"Here is HacchiRoku~`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_DESC_TEXT = `"你好，我是八六，是前后端工程师，同时也是个WebGL特效开发工程师以及服务器运维。详情请使用电脑浏览此网页并且点击该区域亦或是欢迎与我取得联系~`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_DESC_HELLO_OTHER = `"よこそ〜`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_DESC_TEXT_OTHER = `"再点一次就什么都不会再有了哇`"" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_DESC_TEXT = `"你好，我是八六，本职是前端工程师，同时也略懂webGL和一些后端开发与RAG应用开发。详情请使用电脑浏览此网页并且点击该区域亦或是欢迎与我取得联系~`"" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_DESC_HELLO_OTHER = `"你好，谢谢你查看我的详细信息！`"" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_DESC_TEXT_OTHER = `"再点一次就什么都不会再有了`"" | Out-File -FilePath .env -Append -Encoding utf8
 
           "# 社交链接" | Out-File -FilePath .env -Append -Encoding utf8
           "## 请在 src/assets/socialLinks.json 文件中配置" | Out-File -FilePath .env -Append -Encoding utf8
