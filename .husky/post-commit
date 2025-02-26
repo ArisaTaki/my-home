@@ -41,6 +41,9 @@ if [ "$BRANCH" = "dev" ]; then
   echo "生成更新日志..."
   node scripts/generate-changelog.js
   
+  # 确保临时文件不会被提交
+  echo ".version_updating" >> .gitignore
+  
   # 确保添加所有被修改的文件，包括changelog.json
   git add package.json src/data/changelog.json
   
@@ -49,6 +52,9 @@ if [ "$BRANCH" = "dev" ]; then
   
   # 重新提交所有更改，保持原来的提交信息
   git commit -m "$COMMIT_MSG"
+  
+  # 移除临时标记文件
+  rm -f .version_updating
   
   echo "版本号已更新为 ${NEW_VERSION}，更新日志已生成并包含在本次提交中"
 fi 
