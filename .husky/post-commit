@@ -11,9 +11,9 @@ if [ -f ".version_updating" ]; then
   exit 0
 fi
 
-# 如果当前分支是 dev，更新版本号
+# 如果当前分支是 dev，更新版本号和更新日志
 if [ "$BRANCH" = "dev" ]; then
-  echo "提交到 dev 分支，正在更新版本号..."
+  echo "提交到 dev 分支，正在更新版本号和更新日志..."
   
   # 创建标记文件以防止循环
   touch .version_updating
@@ -30,9 +30,30 @@ if [ "$BRANCH" = "dev" ]; then
   # 更新package.json中的版本号 (macOS兼容方式)
   sed -i '' -E "s/(\"version\": \")[0-9]+\.[0-9]+\.[0-9]+(\",)/\1${NEW_VERSION}\2/" package.json
   
-  # 提交版本变更
-  git add package.json
+  # 更新更新日志
+  # 获取最近的10条提交信息
+  COMMITS=$(git log -10 --pretty=format:"%s" | grep -v "版本" | grep -v "测试")
+  
+  # 提取新功能和修复
+  NEW_FEATURES=$(echo "$COMMITS" | grep -i '新增\|添加\|feat\|feature\|new' | sed 's/^.*: //' | sed 's/^/"/;s/$/"/' | tr '\n' ',')
+  FIXES=$(echo "$COMMITS" | grep -i '修复\|fix\|bug\|修正\|订正' | sed 's/^.*: //' | sed 's/^/"/;s/$/"/' | tr '\n' ',')
+  
+  # 移除最后的逗号
+  NEW_FEATURES=${NEW_FEATURES%,}
+  FIXES=${FIXES%,}
+  
+  # 更新src/views/MoreSet/index.vue中的更新日志
+  if [ ! -z "$NEW_FEATURES" ]; then
+    sed -i '' -E "s/(new: \[)[^]]*(\],)/\1${NEW_FEATURES}\2/" src/views/MoreSet/index.vue
+  fi
+  
+  if [ ! -z "$FIXES" ]; then
+    sed -i '' -E "s/(fix: \[)[^]]*(\],)/\1${FIXES}\2/" src/views/MoreSet/index.vue
+  fi
+  
+  # 提交版本和更新日志变更
+  git add package.json src/views/MoreSet/index.vue
   git commit --amend --no-edit
   
-  echo "版本号已更新为 ${NEW_VERSION}"
+  echo "版本号已更新为 ${NEW_VERSION}，更新日志已更新"
 fi 
