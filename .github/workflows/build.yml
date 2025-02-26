@@ -57,12 +57,6 @@ jobs:
           "# ICP 备案号" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_ICP = `"`"" | Out-File -FilePath .env -Append -Encoding utf8
 
-          "# 歌曲 API 地址" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SONG_API = `"${{ secrets.ENV_SONG_API }}`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SONG_SERVER = `"netease`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SONG_TYPE = `"playlist`"" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SONG_ID = `"${{ secrets.ENV_SONG_ID }}`"" | Out-File -FilePath .env -Append -Encoding utf8
-
           Write-Host "Created .env file with values from GitHub Secrets"
       # 安装项目依赖
       - name: Install Dependencies
