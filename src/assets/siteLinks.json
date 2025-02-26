@@ -1,0 +1,32 @@
+[
+  {
+    "icon": "Blog",
+    "name": "博客",
+    "link": "https://blog.fufubest.com/"
+  },
+  {
+    "icon": "Github",
+    "name": "Github",
+    "link": "https://github.com/ArisaTaki"
+  },
+  {
+    "icon": "ImagesRegular",
+    "name": "画廊",
+    "link": "https://images.fufubest.com/"
+  },
+  {
+    "icon": "Book",
+    "name": "前简书笔记",
+    "link": "https://www.jianshu.com/u/2331917815ff"
+  },
+  {
+    "icon": "GlideG",
+    "name": "shader随缘",
+    "link": "https://shader.fufubest.com/"
+  },
+  {
+    "icon": "GlideG",
+    "name": "raymarching",
+    "link": "https://raymarching.fufubest.com/"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Github",
+    "icon": "/images/icon/github.png",
+    "tip": "去 Github 看看？",
+    "url": "https://github.com/ArisaTaki"
+  },
+  {
+    "name": "BiliBili",
+    "icon": "/images/icon/bilibili.png",
+    "tip": "📺",
+    "url": "https://space.bilibili.com/54045630"
+  },
+  {
+    "name": "QQ",
+    "icon": "/images/icon/qq.png",
+    "tip": "🐧",
+    "url": "https://res.abeim.cn/api/qq/?qq=570490640"
+  },
+  {
+    "name": "Email",
+    "icon": "/images/icon/email.png",
+    "tip": "📮",
+    "url": "mailto:570490640@qq.com"
+  },
+  {
+    "name": "Twitter",
+    "icon": "/images/icon/twitter.png",
+    "tip": "🐦",
+    "url": "https://x.com/ny34902620?s=21&t=11QfMb0hKjhirew08NsZTQ"
+  },
+  {
+    "name": "Telegram",
+    "icon": "/images/icon/telegram.png",
+    "tip": "✈️",
+    "url": "https://t.me/+14155708447"
+  }
+]
