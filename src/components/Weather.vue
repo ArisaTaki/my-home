@@ -36,18 +36,37 @@ const weatherData = reactive({
 // 通过IP API获取用户位置信息
 const getUserLocationByIp = async () => {
   try {
-    const response = await fetch("http://ip-api.com/json/");
+    // 使用ipapi.co服务（支持HTTPS）
+    const response = await fetch("https://ipapi.co/json/");
     const data = await response.json();
 
-    if (data.status !== "success") {
-      throw new Error("IP定位失败");
+    if (data && data.city) {
+      return {
+        city: data.city,
+        location: `${data.longitude},${data.latitude}`,
+        success: true,
+      };
     }
 
-    return {
-      city: data.city,
-      location: `${data.lon},${data.lat}`,
-      success: true,
-    };
+    // 备用方案：使用ipgeolocation.io（免费且支持HTTPS）
+    try {
+      const backupResponse = await fetch(
+        "https://api.ipgeolocation.io/ipgeo?apiKey=42834f26df244474a5afe5e5a148c806",
+      );
+      const backupData = await backupResponse.json();
+
+      if (backupData && backupData.city) {
+        return {
+          city: backupData.city,
+          location: `${backupData.longitude},${backupData.latitude}`,
+          success: true,
+        };
+      }
+    } catch (err) {
+      console.log("备用IP位置服务请求失败", err);
+    }
+
+    throw new Error("所有IP定位服务均失败");
   } catch (error) {
     console.error("通过IP获取位置失败:", error);
     return { success: false };
