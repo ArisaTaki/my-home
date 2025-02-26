@@ -4,7 +4,7 @@
   "github": "https://github.com/ArisaTaki/my-home",
   "home": "https://fufubest.com",
   "private": true,
-  "version": "0.1.19",
+  "version": "0.1.20",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

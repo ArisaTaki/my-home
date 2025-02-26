@@ -75,7 +75,7 @@ const siteUrl = computed(() => {
 // 更新日志
 const upData = reactive({
   new: ["自动更新日志功能"],
-  fix: ["修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
+  fix: ["自动更新日志Bug","修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
 });
 
 // 跳转源代码仓库
