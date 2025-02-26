@@ -7,6 +7,8 @@ import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import viteCompression from "vite-plugin-compression";
+import fs from "node:fs";
+import path from "node:path";
 
 // https://vitejs.dev/config/
 export default ({ mode }) =>
@@ -22,19 +24,20 @@ export default ({ mode }) =>
       }),
       {
         name: "copy-changelog",
-        enforce: "post",
+        enforce: "pre",
         apply: "build",
-        generateBundle() {
-          const fs = require("fs");
-          const src = "src/data/changelog.json";
-          const dest = "dist/src/data/";
+        buildStart() {
+          const publicDataDir = path.resolve("public", "src", "data");
+          if (!fs.existsSync(publicDataDir)) {
+            fs.mkdirSync(publicDataDir, { recursive: true });
+          }
 
-          if (fs.existsSync(src)) {
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true });
-            }
-            fs.copyFileSync(src, dest + "changelog.json");
-            console.log("已复制changelog.json到输出目录");
+          const srcPath = path.resolve("src", "data", "changelog.json");
+          const destPath = path.resolve(publicDataDir, "changelog.json");
+
+          if (fs.existsSync(srcPath)) {
+            fs.copyFileSync(srcPath, destPath);
+            console.log("已复制changelog.json到public目录");
           } else {
             console.warn("未找到changelog.json源文件");
           }

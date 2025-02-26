@@ -81,7 +81,7 @@ const upData = ref({
 // 从动态生成的文件获取更新日志
 const loadChangelog = async () => {
   try {
-    // 使用fetch替代import，更加可靠
+    // 使用绝对路径加载changelog.json
     const response = await fetch("/src/data/changelog.json");
     if (!response.ok) {
       throw new Error(`网络响应错误: ${response.status}`);
