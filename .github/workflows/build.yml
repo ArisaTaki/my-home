@@ -122,5 +122,19 @@ jobs:
             sudo chown -R ${{ secrets.SERVER_USERNAME }}:www-data ${{ secrets.SERVER_PATH }}
             sudo chmod -R 755 ${{ secrets.SERVER_PATH }}
 
-            # 如果需要，重新加载Nginx配置
-            sudo systemctl reload nginx
+            # 使用正确的Nginx路径重载配置
+            echo "尝试重新加载正在运行的Nginx配置..."
+            if [ -f /usr/local/nginx/sbin/nginx ]; then
+              sudo /usr/local/nginx/sbin/nginx -s reload
+              echo "Nginx配置已重新加载"
+            else
+              echo "未找到/usr/local/nginx/sbin/nginx，尝试查找Nginx位置..."
+              NGINX_PATH=$(sudo find / -name nginx -type f -executable | head -n 1)
+              if [ ! -z "$NGINX_PATH" ]; then
+                echo "找到Nginx路径: $NGINX_PATH，尝试重新加载..."
+                sudo $NGINX_PATH -s reload
+                echo "Nginx配置已重新加载"
+              else
+                echo "无法找到Nginx可执行文件，请手动重新加载Nginx配置"
+              fi
+            fi
