@@ -74,8 +74,8 @@ const siteUrl = computed(() => {
 
 // 更新日志
 const upData = reactive({
-  new: ["添加一键脚本"],
-  fix: ["订正参数", "添加异步操作确保渲染", "清晰化结构", "使用动态导入"],
+  new: ["自动更新日志功能"],
+  fix: ["修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
 });
 
 // 跳转源代码仓库
