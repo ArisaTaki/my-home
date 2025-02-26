@@ -20,6 +20,26 @@ export default ({ mode }) =>
       Components({
         resolvers: [ElementPlusResolver()],
       }),
+      {
+        name: "copy-changelog",
+        enforce: "post",
+        apply: "build",
+        generateBundle() {
+          const fs = require("fs");
+          const src = "src/data/changelog.json";
+          const dest = "dist/src/data/";
+
+          if (fs.existsSync(src)) {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true });
+            }
+            fs.copyFileSync(src, dest + "changelog.json");
+            console.log("已复制changelog.json到输出目录");
+          } else {
+            console.warn("未找到changelog.json源文件");
+          }
+        },
+      },
       VitePWA({
         registerType: "autoUpdate",
         workbox: {

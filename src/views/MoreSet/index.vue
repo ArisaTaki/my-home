@@ -81,8 +81,14 @@ const upData = ref({
 // 从动态生成的文件获取更新日志
 const loadChangelog = async () => {
   try {
-    const changelog = await import("@/data/changelog.json");
-    upData.value = changelog.default || { new: [], fix: [] };
+    // 使用fetch替代import，更加可靠
+    const response = await fetch("/src/data/changelog.json");
+    if (!response.ok) {
+      throw new Error(`网络响应错误: ${response.status}`);
+    }
+    const data = await response.json();
+    upData.value = data || { new: [], fix: [] };
+    console.log("加载到的更新日志:", upData.value);
   } catch (error) {
     console.error("无法加载更新日志:", error);
     // 回退到静态数据
