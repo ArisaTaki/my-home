@@ -73,9 +73,28 @@ const siteUrl = computed(() => {
 });
 
 // 更新日志
-const upData = reactive({
-  new: ["自动更新日志功能"],
-  fix: ["自动更新日志Bug","修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
+const upData = ref({
+  new: [],
+  fix: [],
+});
+
+// 从动态生成的文件获取更新日志
+const loadChangelog = async () => {
+  try {
+    const changelog = await import("@/data/changelog.json");
+    upData.value = changelog.default || { new: [], fix: [] };
+  } catch (error) {
+    console.error("无法加载更新日志:", error);
+    // 回退到静态数据
+    upData.value = {
+      new: ["自动更新日志功能"],
+      fix: ["自动更新日志Bug", "修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
+    };
+  }
+};
+
+onMounted(() => {
+  loadChangelog();
 });
 
 // 跳转源代码仓库
