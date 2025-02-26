@@ -4,7 +4,7 @@
   "github": "https://github.com/ArisaTaki/my-home",
   "home": "https://fufubest.com",
   "private": true,
-  "version": "0.1.26",
+  "version": "0.1.28",
   "type": "module",
   "scripts": {
     "dev": "npm run changelog && vite --host",
