@@ -4,15 +4,35 @@
 # 获取当前分支
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# 如果当前分支是 dev，增加版本号
+# 如果存在标记文件，说明这是一个修正提交，直接退出
+if [ -f ".version_updating" ]; then
+  rm .version_updating
+  echo "版本更新完成"
+  exit 0
+fi
+
+# 如果当前分支是 dev，更新版本号
 if [ "$BRANCH" = "dev" ]; then
   echo "提交到 dev 分支，正在更新版本号..."
-  # 使用 npm 版本工具增加补丁版本
-  npm version patch --no-git-tag-version
+  
+  # 创建标记文件以防止循环
+  touch .version_updating
+  
+  # 获取主版本和次版本(保持不变)
+  MAJOR_MINOR=$(grep '"version":' package.json | sed -E 's/.*"([0-9]+\.[0-9]+)\.[0-9]+".*/\1/')
+  
+  # 获取Git提交总数作为补丁版本
+  COMMIT_COUNT=$(git rev-list --count HEAD)
+  
+  # 组合新版本号
+  NEW_VERSION="${MAJOR_MINOR}.${COMMIT_COUNT}"
+  
+  # 更新package.json中的版本号 (macOS兼容方式)
+  sed -i '' -E "s/(\"version\": \")[0-9]+\.[0-9]+\.[0-9]+(\",)/\1${NEW_VERSION}\2/" package.json
   
   # 提交版本变更
   git add package.json
   git commit --amend --no-edit
   
-  echo "版本号已更新"
+  echo "版本号已更新为 ${NEW_VERSION}"
 fi 
