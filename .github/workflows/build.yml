@@ -51,6 +51,9 @@ jobs:
           "# 天气 Key" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_QWEATHER_KEY = `"${{ secrets.ENV_QWEATHER_KEY }}`"" | Out-File -FilePath .env -Append -Encoding utf8
 
+          "# IP API Key" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_IPGEOLOCATION_KEY = `"${{ secrets.ENV_IPGEOLOCATION_KEY }}`"" | Out-File -FilePath .env -Append -Encoding utf8
+
           "# 建站日期" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_START = `"2022-01-01`"" | Out-File -FilePath .env -Append -Encoding utf8
 

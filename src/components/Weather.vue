@@ -51,7 +51,7 @@ const getUserLocationByIp = async () => {
     // 备用方案：使用ipgeolocation.io（免费且支持HTTPS）
     try {
       const backupResponse = await fetch(
-        "https://api.ipgeolocation.io/ipgeo?apiKey=42834f26df244474a5afe5e5a148c806",
+        `https://api.ipgeolocation.io/ipgeo?apiKey=${import.meta.env.VITE_IPGEOLOCATION_KEY}`,
       );
       const backupData = await backupResponse.json();
 
