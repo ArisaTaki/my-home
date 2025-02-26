@@ -122,19 +122,65 @@ jobs:
             sudo chown -R ${{ secrets.SERVER_USERNAME }}:www-data ${{ secrets.SERVER_PATH }}
             sudo chmod -R 755 ${{ secrets.SERVER_PATH }}
 
-            # 使用正确的Nginx路径重载配置
-            echo "尝试重新加载正在运行的Nginx配置..."
-            if [ -f /usr/local/nginx/sbin/nginx ]; then
-              sudo /usr/local/nginx/sbin/nginx -s reload
-              echo "Nginx配置已重新加载"
+            # 检查是否是LNMP架构
+            echo "检查LNMP架构..."
+            if [ -f /usr/local/lnmp/lnmp ]; then
+              echo "检测到LNMP架构，使用LNMP命令重启Nginx..."
+              sudo /usr/local/lnmp/lnmp nginx reload
+              exit_code=$?
+              if [ $exit_code -ne 0 ]; then
+                echo "LNMP Nginx重启失败，尝试使用restart命令..."
+                sudo /usr/local/lnmp/lnmp nginx restart
+              fi
+            elif [ -f /root/lnmp/lnmp ]; then
+              echo "检测到LNMP架构（在/root目录），使用LNMP命令重启Nginx..."
+              sudo /root/lnmp/lnmp nginx reload
+              exit_code=$?
+              if [ $exit_code -ne 0 ]; then
+                echo "LNMP Nginx重启失败，尝试使用restart命令..."
+                sudo /root/lnmp/lnmp nginx restart
+              fi
             else
-              echo "未找到/usr/local/nginx/sbin/nginx，尝试查找Nginx位置..."
-              NGINX_PATH=$(sudo find / -name nginx -type f -executable | head -n 1)
-              if [ ! -z "$NGINX_PATH" ]; then
-                echo "找到Nginx路径: $NGINX_PATH，尝试重新加载..."
-                sudo $NGINX_PATH -s reload
-                echo "Nginx配置已重新加载"
+              # 尝试使用标准Nginx方式
+              echo "尝试使用标准方式重新加载Nginx配置..."
+              if [ -f /usr/local/nginx/sbin/nginx ]; then
+                # 如果PID文件不存在，可能需要先启动Nginx
+                if [ ! -f /usr/local/nginx/logs/nginx.pid ]; then
+                  echo "Nginx可能未运行，尝试启动..."
+                  sudo /usr/local/nginx/sbin/nginx
+                  sleep 2
+                fi
+                
+                sudo /usr/local/nginx/sbin/nginx -s reload
+                if [ $? -ne 0 ]; then
+                  echo "Nginx重载失败，尝试使用-c参数指定配置文件..."
+                  sudo /usr/local/nginx/sbin/nginx -s reload -c /usr/local/nginx/conf/nginx.conf
+                fi
+              elif [ -f /usr/sbin/nginx ]; then
+                echo "使用系统Nginx..."
+                sudo /usr/sbin/nginx -s reload
+                if [ $? -ne 0 ]; then
+                  echo "系统Nginx重载失败，尝试重启服务..."
+                  sudo service nginx restart || sudo systemctl restart nginx
+                fi
               else
-                echo "无法找到Nginx可执行文件，请手动重新加载Nginx配置"
+                echo "无法找到Nginx可执行文件，尝试查找..."
+                NGINX_PATH=$(sudo find / -name nginx -type f -executable 2>/dev/null | grep -v "\.git" | head -n 1)
+                if [ ! -z "$NGINX_PATH" ]; then
+                  echo "找到Nginx路径: $NGINX_PATH，尝试重新加载..."
+                  sudo $NGINX_PATH -s reload
+                  if [ $? -ne 0 ]; then
+                    echo "重载失败，尝试使用-c参数..."
+                    NGINX_CONF=$(sudo find / -name nginx.conf 2>/dev/null | grep -v "\.git" | head -n 1)
+                    if [ ! -z "$NGINX_CONF" ]; then
+                      echo "找到配置文件: $NGINX_CONF"
+                      sudo $NGINX_PATH -s reload -c $NGINX_CONF
+                    fi
+                  fi
+                else
+                  echo "无法找到Nginx，网站文件已部署但Nginx未重新加载。请手动重新加载配置。"
+                fi
               fi
             fi
+
+            echo "网站部署完成！"
