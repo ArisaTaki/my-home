@@ -18,7 +18,7 @@
         </div>
         <div class="version">
           <div class="num">v&nbsp;{{ config.version }}</div>
-          <el-tooltip content="Github Shader模板仓库" placement="right" :show-arrow="false">
+          <el-tooltip content="Github 此主页项目" placement="right" :show-arrow="false">
             <github-one class="github" theme="outline" size="24" @click="jumpTo(config.github)" />
           </el-tooltip>
         </div>

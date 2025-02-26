@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 获取当前分支
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# 如果当前分支是 dev，增加版本号
+if [ "$BRANCH" = "dev" ]; then
+  echo "提交到 dev 分支，正在更新版本号..."
+  # 使用 npm 版本工具增加补丁版本
+  npm version patch --no-git-tag-version
+  
+  # 提交版本变更
+  git add package.json
+  git commit --amend --no-edit
+  
+  echo "版本号已更新"
+fi 
