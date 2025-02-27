@@ -55,7 +55,7 @@ jobs:
           "VITE_IPGEOLOCATION_KEY = `"${{ secrets.ENV_IPGEOLOCATION_KEY }}`"" | Out-File -FilePath .env -Append -Encoding utf8
 
           "# 建站日期" | Out-File -FilePath .env -Append -Encoding utf8
-          "VITE_SITE_START = `"2022-01-01`"" | Out-File -FilePath .env -Append -Encoding utf8
+          "VITE_SITE_START = `"2023-11-25`"" | Out-File -FilePath .env -Append -Encoding utf8
 
           "# ICP 备案号" | Out-File -FilePath .env -Append -Encoding utf8
           "VITE_SITE_ICP = `"`"" | Out-File -FilePath .env -Append -Encoding utf8
