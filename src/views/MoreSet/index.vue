@@ -34,16 +34,14 @@
               <span>加载更新日志中...</span>
             </div>
             <template v-else>
-              <div v-if="upData.new.length === 0 && upData.fix.length === 0" class="empty-log">
-                暂无更新记录
-              </div>
-              <div v-for="item in upData.new" :key="item" class="uptext">
-                <add-one theme="outline" size="22" />
-                {{ item }}
-              </div>
-              <div v-for="item in upData.fix" :key="item" class="uptext">
-                <bug theme="outline" size="22" />
-                {{ item }}
+              <div v-if="upData.commits.length === 0" class="empty-log">暂无更新记录</div>
+              <div v-for="item in upData.commits" :key="item.message" class="uptext">
+                <div class="commit-content">
+                  <el-icon v-if="item.type === 'fix'" class="i-icon fix-icon"><bug /></el-icon>
+                  <el-icon v-else class="i-icon feature-icon"><add-one /></el-icon>
+                  <span class="message">{{ item.message }}</span>
+                </div>
+                <span class="date">{{ item.date }}</span>
               </div>
             </template>
           </div>
@@ -84,8 +82,7 @@ const siteUrl = computed(() => {
 
 // 更新日志
 const upData = ref({
-  new: [],
-  fix: [],
+  commits: [],
 });
 
 // 从本地存储中获取缓存的更新日志
@@ -121,7 +118,7 @@ const cacheChangelog = (data) => {
   }
 };
 
-// 从GitHub API获取提交记录并生成更新日志
+// 从GitHub API获取提交记录
 const loadChangelog = async () => {
   isLoading.value = true;
 
@@ -163,40 +160,45 @@ const loadChangelog = async () => {
     const commits = await response.json();
     console.log(`获取到${commits.length}条提交记录`);
 
-    // 处理提交记录，分类为新功能和修复
-    const newFeatures = [];
-    const fixes = [];
+    // 处理提交记录
+    const commitList = [];
 
     commits.forEach((commit) => {
       const message = commit.commit.message.split("\n")[0]; // 获取提交消息的第一行
+      const date = new Date(commit.commit.committer.date);
+      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
       // 排除版本更新和自动生成的提交
       if (
         message.includes("版本号") ||
         message.includes("[skip ci]") ||
         message.includes("Merge") ||
-        message.includes("merge")
+        message.includes("merge") ||
+        message.includes("chore:")
       ) {
         return;
       }
 
-      if (message.match(/新增|添加|feat|feature|new/i)) {
-        const featureMsg = message.replace(/^.*:\s*/, "").trim();
-        if (featureMsg && !newFeatures.includes(featureMsg)) {
-          newFeatures.push(featureMsg);
-        }
-      } else if (message.match(/修复|fix|bug|修正|订正/i)) {
-        const fixMsg = message.replace(/^.*:\s*/, "").trim();
-        if (fixMsg && !fixes.includes(fixMsg)) {
-          fixes.push(fixMsg);
-        }
+      // 清理提交信息，去除前缀
+      const cleanedMessage = message
+        .replace(
+          /^(feat|fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9\-_.]+\))?:\s*/,
+          "",
+        )
+        .trim();
+
+      if (cleanedMessage && !commitList.some((item) => item.message === cleanedMessage)) {
+        commitList.push({
+          message: cleanedMessage,
+          date: formattedDate,
+          type: message.match(/^fix|修复|bug|订正/i) ? "fix" : "feature",
+        });
       }
     });
 
-    // 更新数据
+    // 更新数据，最多显示10条记录
     const result = {
-      new: newFeatures.slice(0, 7), // 最多显示7条新功能
-      fix: fixes.slice(0, 7), // 最多显示7条修复
+      commits: commitList.slice(0, 10),
     };
 
     // 缓存结果
@@ -208,8 +210,10 @@ const loadChangelog = async () => {
     console.error("无法从GitHub获取更新日志:", error);
     // 回退到静态数据
     upData.value = {
-      new: ["自动从GitHub获取更新日志功能"],
-      fix: ["修复更新日志显示问题", "修复天气组件HTTPS问题"],
+      commits: [
+        { message: "使用GitHub API直接获取提交记录", date: "2023-04-20", type: "feature" },
+        { message: "修复更新日志显示问题", date: "2023-04-15", type: "fix" },
+      ],
     };
   } finally {
     isLoading.value = false;
@@ -372,16 +376,45 @@ const jumpTo = (url) => {
               display: flex;
               flex-direction: row;
               align-items: center;
+              justify-content: space-between;
               padding-bottom: 16px;
 
               &:nth-last-of-type(1) {
                 padding: 0;
               }
 
+              .commit-content {
+                display: flex;
+                align-items: center;
+                flex: 1;
+                min-width: 0;
+              }
+
+              .message {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+
+              .date {
+                font-size: 12px;
+                margin-left: 8px;
+                flex-shrink: 0;
+              }
+
+              .fix-icon {
+                color: #f56c6c;
+              }
+
+              .feature-icon {
+                color: #67c23a;
+              }
+
               .i-icon {
                 width: 22px;
                 height: 22px;
                 margin-right: 8px;
+                flex-shrink: 0;
               }
             }
           }
