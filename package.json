@@ -4,16 +4,15 @@
   "github": "https://github.com/ArisaTaki/my-home",
   "home": "https://fufubest.com",
   "private": true,
-  "version": "0.1.35",
+  "version": "0.1.36",
   "type": "module",
   "scripts": {
-    "dev": "npm run changelog && vite --host",
-    "build": "npm run changelog && vite build",
+    "dev": "vite --host",
+    "build": "vite build",
     "preview": "vite preview",
     "format": "prettier --write src/",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
-    "prepare": "husky",
-    "changelog": "node scripts/generate-changelog.js"
+    "prepare": "husky"
   },
   "dependencies": {
     "@worstone/vue-aplayer": "^1.0.6",
