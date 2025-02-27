@@ -2,7 +2,7 @@
   <div :class="store.backgroundShow ? 'cover show' : 'cover'">
     <img
       v-show="store.imgLoadStatus"
-      src="/images/sea.webp"
+      src="/images/background/sea.webp"
       class="bg"
       alt="cover"
       @load="imgLoadComplete"
