@@ -499,7 +499,7 @@ const jumpTo = (url) => {
       padding-right: 40px !important;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      overflow-y: auto;
 
       .title {
         display: flex;
