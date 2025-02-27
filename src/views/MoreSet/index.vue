@@ -29,14 +29,23 @@
             </div>
           </template>
           <div class="upnote">
-            <div v-for="item in upData.new" :key="item" class="uptext">
-              <add-one theme="outline" size="22" />
-              {{ item }}
+            <div v-if="isLoading" class="loading-container">
+              <el-icon class="loading-icon"><loading /></el-icon>
+              <span>加载更新日志中...</span>
             </div>
-            <div v-for="item in upData.fix" :key="item" class="uptext">
-              <bug theme="outline" size="22" />
-              {{ item }}
-            </div>
+            <template v-else>
+              <div v-if="upData.new.length === 0 && upData.fix.length === 0" class="empty-log">
+                暂无更新记录
+              </div>
+              <div v-for="item in upData.new" :key="item" class="uptext">
+                <add-one theme="outline" size="22" />
+                {{ item }}
+              </div>
+              <div v-for="item in upData.fix" :key="item" class="uptext">
+                <bug theme="outline" size="22" />
+                {{ item }}
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -52,13 +61,14 @@
 </template>
 
 <script setup>
-import { CloseOne, SettingTwo, GithubOne, AddOne, Bug } from "@icon-park/vue-next";
+import { CloseOne, SettingTwo, GithubOne, AddOne, Bug, Loading } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
 import Set from "@/components/Set.vue";
 import config from "@/../package.json";
 
 const store = mainStore();
 const closeShow = ref(false);
+const isLoading = ref(false);
 
 // 站点链接
 const siteUrl = computed(() => {
@@ -78,24 +88,131 @@ const upData = ref({
   fix: [],
 });
 
-// 从动态生成的文件获取更新日志
-const loadChangelog = async () => {
+// 从本地存储中获取缓存的更新日志
+const getCachedChangelog = () => {
   try {
-    // 使用绝对路径加载changelog.json
-    const response = await fetch("/src/data/changelog.json");
-    if (!response.ok) {
-      throw new Error(`网络响应错误: ${response.status}`);
+    const cachedData = localStorage.getItem("changelog_cache");
+    if (cachedData) {
+      const { data, timestamp } = JSON.parse(cachedData);
+      // 缓存有效期为1小时
+      if (Date.now() - timestamp < 3600000) {
+        console.log("使用缓存的更新日志数据");
+        return data;
+      }
     }
-    const data = await response.json();
-    upData.value = data || { new: [], fix: [] };
-    console.log("加载到的更新日志:", upData.value);
   } catch (error) {
-    console.error("无法加载更新日志:", error);
+    console.error("读取缓存数据失败:", error);
+  }
+  return null;
+};
+
+// 缓存更新日志到本地存储
+const cacheChangelog = (data) => {
+  try {
+    localStorage.setItem(
+      "changelog_cache",
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (error) {
+    console.error("缓存数据失败:", error);
+  }
+};
+
+// 从GitHub API获取提交记录并生成更新日志
+const loadChangelog = async () => {
+  isLoading.value = true;
+
+  // 先尝试获取缓存的数据
+  const cachedData = getCachedChangelog();
+  if (cachedData) {
+    upData.value = cachedData;
+    isLoading.value = false;
+    return;
+  }
+
+  try {
+    // 从package.json中获取GitHub仓库信息
+    const repoUrl = config.github;
+    // 解析仓库所有者和名称
+    const matches = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!matches || matches.length < 3) {
+      throw new Error("无法解析GitHub仓库信息");
+    }
+
+    const owner = matches[1];
+    const repo = matches[2];
+
+    // 使用GitHub API获取最近的提交记录
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/commits?per_page=30&sha=dev`;
+    console.log("正在从以下地址获取提交记录:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        Accept: "application/vnd.github.v3+json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API 请求失败: ${response.status}`);
+    }
+
+    const commits = await response.json();
+    console.log(`获取到${commits.length}条提交记录`);
+
+    // 处理提交记录，分类为新功能和修复
+    const newFeatures = [];
+    const fixes = [];
+
+    commits.forEach((commit) => {
+      const message = commit.commit.message.split("\n")[0]; // 获取提交消息的第一行
+
+      // 排除版本更新和自动生成的提交
+      if (
+        message.includes("版本号") ||
+        message.includes("[skip ci]") ||
+        message.includes("Merge") ||
+        message.includes("merge")
+      ) {
+        return;
+      }
+
+      if (message.match(/新增|添加|feat|feature|new/i)) {
+        const featureMsg = message.replace(/^.*:\s*/, "").trim();
+        if (featureMsg && !newFeatures.includes(featureMsg)) {
+          newFeatures.push(featureMsg);
+        }
+      } else if (message.match(/修复|fix|bug|修正|订正/i)) {
+        const fixMsg = message.replace(/^.*:\s*/, "").trim();
+        if (fixMsg && !fixes.includes(fixMsg)) {
+          fixes.push(fixMsg);
+        }
+      }
+    });
+
+    // 更新数据
+    const result = {
+      new: newFeatures.slice(0, 7), // 最多显示7条新功能
+      fix: fixes.slice(0, 7), // 最多显示7条修复
+    };
+
+    // 缓存结果
+    cacheChangelog(result);
+
+    upData.value = result;
+    console.log("处理后的更新日志:", upData.value);
+  } catch (error) {
+    console.error("无法从GitHub获取更新日志:", error);
     // 回退到静态数据
     upData.value = {
-      new: ["自动更新日志功能"],
-      fix: ["自动更新日志Bug", "修复天气组件HTTPS问题：替换为支持HTTPS的IP定位服务"],
+      new: ["自动从GitHub获取更新日志功能"],
+      fix: ["修复更新日志显示问题", "修复天气组件HTTPS问题"],
     };
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -217,6 +334,39 @@ const jumpTo = (url) => {
             padding: 20px;
             height: calc(100% - 56px);
             overflow-y: auto;
+
+            .loading-container {
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              height: 100%;
+              color: #666;
+
+              .loading-icon {
+                font-size: 32px;
+                margin-bottom: 10px;
+                animation: rotate 1.5s linear infinite;
+              }
+
+              @keyframes rotate {
+                0% {
+                  transform: rotate(0deg);
+                }
+                100% {
+                  transform: rotate(360deg);
+                }
+              }
+            }
+
+            .empty-log {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100%;
+              color: #999;
+              font-style: italic;
+            }
 
             .uptext {
               display: flex;
