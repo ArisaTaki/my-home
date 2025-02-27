@@ -43,10 +43,11 @@
                     <el-icon class="i-icon feature-icon"><add-one /></el-icon>
                     <div class="log-title">新功能</div>
                   </div>
-                  <div v-for="feature in upData.new" :key="feature" class="uptext">
+                  <div v-for="feature in upData.new" :key="feature.message" class="uptext">
                     <div class="commit-content">
-                      <span class="message">{{ "- " + feature }}</span>
+                      <span class="message">{{ "- " + feature.message }}</span>
                     </div>
+                    <span class="date">{{ feature.date }}</span>
                   </div>
                 </div>
                 <div v-if="upData.fix.length > 0" class="fix-category">
@@ -54,10 +55,11 @@
                     <el-icon class="i-icon fix-icon"><bug /></el-icon>
                     <div class="log-title">问题修复</div>
                   </div>
-                  <div v-for="fix in upData.fix" :key="fix" class="uptext">
+                  <div v-for="fix in upData.fix" :key="fix.message" class="uptext">
                     <div class="commit-content">
-                      <span class="message">{{ "- " + fix }}</span>
+                      <span class="message">{{ "- " + fix.message }}</span>
                     </div>
+                    <span class="date">{{ fix.date }}</span>
                   </div>
                 </div>
               </template>
@@ -111,7 +113,14 @@ const getCachedChangelog = () => {
     if (cachedData) {
       const { data, timestamp } = JSON.parse(cachedData);
       // 确保缓存数据格式正确
-      if (data && typeof data === "object" && Array.isArray(data.new) && Array.isArray(data.fix)) {
+      if (
+        data &&
+        typeof data === "object" &&
+        Array.isArray(data.new) &&
+        Array.isArray(data.fix) &&
+        data.new.every((item) => item.message && item.date) &&
+        data.fix.every((item) => item.message && item.date)
+      ) {
         // 缓存有效期为1小时
         if (Date.now() - timestamp < 3600000) {
           console.log("使用缓存的更新日志数据");
@@ -214,8 +223,8 @@ const loadChangelog = async () => {
       }
 
       const message = commit.commit.message.split("\n")[0]; // 获取提交消息的第一行
-      // const date = new Date(commit.commit.committer.date);
-      // const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const date = new Date(commit.commit.committer.date);
+      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
       // 排除版本更新和自动生成的提交
       if (
@@ -229,13 +238,19 @@ const loadChangelog = async () => {
 
       if (message.match(/新增|添加|feat|feature|new/i)) {
         const featureMsg = message.replace(/^.*:\s*/, "").trim();
-        if (featureMsg && !newFeatures.includes(featureMsg)) {
-          newFeatures.push(featureMsg);
+        if (featureMsg && !newFeatures.some((item) => item.message === featureMsg)) {
+          newFeatures.push({
+            message: featureMsg,
+            date: formattedDate,
+          });
         }
       } else if (message.match(/修复|fix|bug|修正|订正/i)) {
         const fixMsg = message.replace(/^.*:\s*/, "").trim();
-        if (fixMsg && !fixes.includes(fixMsg)) {
-          fixes.push(fixMsg);
+        if (fixMsg && !fixes.some((item) => item.message === fixMsg)) {
+          fixes.push({
+            message: fixMsg,
+            date: formattedDate,
+          });
         }
       }
     });
