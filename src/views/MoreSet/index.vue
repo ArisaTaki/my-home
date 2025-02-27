@@ -34,15 +34,33 @@
               <span>加载更新日志中...</span>
             </div>
             <template v-else>
-              <div v-if="upData.commits.length === 0" class="empty-log">暂无更新记录</div>
-              <div v-for="item in upData.commits" :key="item.message" class="uptext">
-                <div class="commit-content">
-                  <el-icon v-if="item.type === 'fix'" class="i-icon fix-icon"><bug /></el-icon>
-                  <el-icon v-else class="i-icon feature-icon"><add-one /></el-icon>
-                  <span class="message">{{ item.message }}</span>
-                </div>
-                <span class="date">{{ item.date }}</span>
+              <div v-if="upData.new.length === 0 && upData.fix.length === 0" class="empty-log">
+                暂无更新记录
               </div>
+              <template v-else>
+                <div v-if="upData.new.length > 0">
+                  <div class="category-title">
+                    <el-icon class="i-icon feature-icon"><add-one /></el-icon>
+                    <div class="log-title">新功能</div>
+                  </div>
+                  <div v-for="feature in upData.new" :key="feature" class="uptext">
+                    <div class="commit-content">
+                      <span class="message">{{ "- " + feature }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="upData.fix.length > 0" class="fix-category">
+                  <div class="category-title">
+                    <el-icon class="i-icon fix-icon"><bug /></el-icon>
+                    <div class="log-title">问题修复</div>
+                  </div>
+                  <div v-for="fix in upData.fix" :key="fix" class="uptext">
+                    <div class="commit-content">
+                      <span class="message">{{ "- " + fix }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </template>
           </div>
         </el-card>
@@ -82,7 +100,8 @@ const siteUrl = computed(() => {
 
 // 更新日志
 const upData = ref({
-  commits: [],
+  new: [],
+  fix: [],
 });
 
 // 从本地存储中获取缓存的更新日志
@@ -91,14 +110,26 @@ const getCachedChangelog = () => {
     const cachedData = localStorage.getItem("changelog_cache");
     if (cachedData) {
       const { data, timestamp } = JSON.parse(cachedData);
-      // 缓存有效期为1小时
-      if (Date.now() - timestamp < 3600000) {
-        console.log("使用缓存的更新日志数据");
-        return data;
+      // 确保缓存数据格式正确
+      if (data && typeof data === "object" && Array.isArray(data.new) && Array.isArray(data.fix)) {
+        // 缓存有效期为1小时
+        if (Date.now() - timestamp < 3600000) {
+          console.log("使用缓存的更新日志数据");
+          return data;
+        }
+      } else {
+        console.warn("缓存数据格式不正确，重新获取");
+        localStorage.removeItem("changelog_cache");
       }
     }
   } catch (error) {
     console.error("读取缓存数据失败:", error);
+    // 清除可能损坏的缓存
+    try {
+      localStorage.removeItem("changelog_cache");
+    } catch (e) {
+      console.error("清除缓存失败:", e);
+    }
   }
   return null;
 };
@@ -118,9 +149,15 @@ const cacheChangelog = (data) => {
   }
 };
 
-// 从GitHub API获取提交记录
+// 从GitHub API获取提交记录并生成更新日志
 const loadChangelog = async () => {
   isLoading.value = true;
+
+  // 设置默认值，确保即使出错也有有效的数据结构
+  upData.value = {
+    new: [],
+    fix: [],
+  };
 
   // 先尝试获取缓存的数据
   const cachedData = getCachedChangelog();
@@ -140,7 +177,7 @@ const loadChangelog = async () => {
     }
 
     const owner = matches[1];
-    const repo = matches[2];
+    const repo = matches[2].replace(/\.git$/, ""); // 移除可能的.git后缀
 
     // 使用GitHub API获取最近的提交记录
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/commits?per_page=30&sha=dev`;
@@ -151,6 +188,8 @@ const loadChangelog = async () => {
         Accept: "application/vnd.github.v3+json",
       },
       cache: "no-store",
+      mode: "cors",
+      timeout: 10000, // 10秒超时
     });
 
     if (!response.ok) {
@@ -158,63 +197,65 @@ const loadChangelog = async () => {
     }
 
     const commits = await response.json();
+
+    if (!Array.isArray(commits)) {
+      throw new Error("获取的提交记录格式不正确");
+    }
+
     console.log(`获取到${commits.length}条提交记录`);
 
-    // 处理提交记录
-    const commitList = [];
+    // 处理提交记录，分类为新功能和修复
+    const newFeatures = [];
+    const fixes = [];
 
     commits.forEach((commit) => {
+      if (!commit || !commit.commit || !commit.commit.message) {
+        return; // 跳过无效的提交
+      }
+
       const message = commit.commit.message.split("\n")[0]; // 获取提交消息的第一行
-      const date = new Date(commit.commit.committer.date);
-      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      // const date = new Date(commit.commit.committer.date);
+      // const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
       // 排除版本更新和自动生成的提交
       if (
         message.includes("版本号") ||
         message.includes("[skip ci]") ||
         message.includes("Merge") ||
-        message.includes("merge") ||
-        message.includes("chore:")
+        message.includes("merge")
       ) {
         return;
       }
 
-      // 清理提交信息，去除前缀
-      const cleanedMessage = message
-        .replace(
-          /^(feat|fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9\-_.]+\))?:\s*/,
-          "",
-        )
-        .trim();
-
-      if (cleanedMessage && !commitList.some((item) => item.message === cleanedMessage)) {
-        commitList.push({
-          message: cleanedMessage,
-          date: formattedDate,
-          type: message.match(/^fix|修复|bug|订正/i) ? "fix" : "feature",
-        });
+      if (message.match(/新增|添加|feat|feature|new/i)) {
+        const featureMsg = message.replace(/^.*:\s*/, "").trim();
+        if (featureMsg && !newFeatures.includes(featureMsg)) {
+          newFeatures.push(featureMsg);
+        }
+      } else if (message.match(/修复|fix|bug|修正|订正/i)) {
+        const fixMsg = message.replace(/^.*:\s*/, "").trim();
+        if (fixMsg && !fixes.includes(fixMsg)) {
+          fixes.push(fixMsg);
+        }
       }
     });
 
-    // 更新数据，最多显示10条记录
+    // 确保结果中一定有数组
     const result = {
-      commits: commitList.slice(0, 10),
+      new: Array.isArray(newFeatures) ? newFeatures.slice(0, 7) : [], // 最多显示7条新功能
+      fix: Array.isArray(fixes) ? fixes.slice(0, 7) : [], // 最多显示7条修复
     };
 
-    // 缓存结果
-    cacheChangelog(result);
+    // 缓存结果前确认数据格式正确
+    if (Array.isArray(result.new) && Array.isArray(result.fix)) {
+      cacheChangelog(result);
+    }
 
     upData.value = result;
     console.log("处理后的更新日志:", upData.value);
   } catch (error) {
     console.error("无法从GitHub获取更新日志:", error);
-    // 回退到静态数据
-    upData.value = {
-      commits: [
-        { message: "使用GitHub API直接获取提交记录", date: "2023-04-20", type: "feature" },
-        { message: "修复更新日志显示问题", date: "2023-04-15", type: "fix" },
-      ],
-    };
+    // 保持默认的空数组，确保不会造成渲染错误
   } finally {
     isLoading.value = false;
   }
@@ -231,6 +272,11 @@ const jumpTo = (url) => {
 </script>
 
 <style lang="scss" scoped>
+.log-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 8px;
+}
 .set {
   position: absolute;
   top: 50%;
@@ -370,6 +416,17 @@ const jumpTo = (url) => {
               height: 100%;
               color: #999;
               font-style: italic;
+            }
+
+            .category-title {
+              display: flex;
+              align-items: center;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+
+            .fix-category {
+              margin-top: 20px;
             }
 
             .uptext {
